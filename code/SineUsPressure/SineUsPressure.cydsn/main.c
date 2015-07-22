@@ -28,26 +28,32 @@ int main()
   OpampR_Start();
   OpampL_Start();
   UART_Start();
+  RandFreq_Start();
+  RandDelay_Start();
   
   uint8_t channel = 0;
   uint8_t channelMajor = 0;
   uint8_t channelMinor = 0;
+  uint8_t freq = 0;
+  uint16_t delay = 0;
   char *buffer;
   buffer = (char*) malloc (100);
   
+  lo_hi_Write(channelMinor);
+  SigSelect_FastSelect(channelMajor);
+  channelMinor = channel & 0x01;
+  channelMajor = channel >> 1;
+  sprintf(buffer, "Major: %d, minor: %d\r\n", channelMajor, channelMinor);
+  UART_PutString((const char*)buffer);
+  
   for(;;)
   {
-    if (++channel == 8)
-    {
-      channel = 0;
-    }
-    lo_hi_Write(channelMinor);
-    SigSelect_FastSelect(channelMajor);
-    channelMinor = channel & 0x01;
-    channelMajor = channel >> 1;
-    sprintf(buffer, "Major: %d, minor: %d\r\n", channelMajor, channelMinor);
+    delay = RandDelay_Read();
+    freq = RandFreq_Read();
+    sprintf(buffer, "Freq: %d, delay: %d\r\n", freq, delay);
     UART_PutString((const char*)buffer);
-    CyDelay(1500);
+    ToneClock_SetDividerValue(freq*100);
+    CyDelay(1000 + delay);
   }
 }
 
